@@ -69,7 +69,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 			try {
 				AvaloniaEditTextOutput output = new AvaloniaEditTextOutput();
 				Data.Position = 0;
-                IBitmap image = new Bitmap(Data);
+                Bitmap image = new Bitmap(Data);
                 output.AddUIElement(() => new Image { Source = image });
 				output.WriteLine();
                 output.AddButton(Images.Save, Resources.Save, async delegate {

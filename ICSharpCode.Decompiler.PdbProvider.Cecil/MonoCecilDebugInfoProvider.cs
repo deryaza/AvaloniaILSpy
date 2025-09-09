@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
@@ -28,7 +29,10 @@ using ICSharpCode.Decompiler.Util;
 
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
+
 using SRM = System.Reflection.Metadata;
+
+#nullable enable
 
 namespace ICSharpCode.Decompiler.PdbProvider.Cecil
 {
@@ -36,34 +40,40 @@ namespace ICSharpCode.Decompiler.PdbProvider.Cecil
 	{
 		readonly Dictionary<SRM.MethodDefinitionHandle, (IList<SequencePoint> SequencePoints, IList<Variable> Variables)> debugInfo;
 
-		public unsafe MonoCecilDebugInfoProvider(PEFile module, string pdbFileName, string description = null)
+		public unsafe MonoCecilDebugInfoProvider(PEFile module, string pdbFileName, string? description = null)
 		{
-			if (module == null) {
+			if (module == null)
+			{
 				throw new ArgumentNullException(nameof(module));
 			}
 
-			if (!module.Reader.IsEntireImageAvailable) {
+			if (!module.Reader.IsEntireImageAvailable)
+			{
 				throw new ArgumentException("This provider needs access to the full image!");
 			}
 
+			this.SourceFileName = pdbFileName ?? throw new ArgumentNullException(nameof(pdbFileName));
 			this.Description = description ?? $"Loaded from PDB file: {pdbFileName}";
-			this.SourceFileName = pdbFileName;
 
 			var image = module.Reader.GetEntireImage();
 			this.debugInfo = new Dictionary<SRM.MethodDefinitionHandle, (IList<SequencePoint> SequencePoints, IList<Variable> Variables)>();
 			using (UnmanagedMemoryStream stream = new UnmanagedMemoryStream(image.Pointer, image.Length))
-			using (var moduleDef = ModuleDefinition.ReadModule(stream)) {
+			using (var moduleDef = ModuleDefinition.ReadModule(stream))
+			{
 				moduleDef.ReadSymbols(new PdbReaderProvider().GetSymbolReader(moduleDef, pdbFileName));
 
-				foreach (var method in module.Metadata.MethodDefinitions) {
+				foreach (var method in module.Metadata.MethodDefinitions)
+				{
 					var cecilMethod = moduleDef.LookupToken(MetadataTokens.GetToken(method)) as MethodDefinition;
 					var debugInfo = cecilMethod?.DebugInformation;
 					if (debugInfo == null)
 						continue;
 					IList<SequencePoint> sequencePoints = EmptyList<SequencePoint>.Instance;
-					if (debugInfo.HasSequencePoints) {
+					if (debugInfo.HasSequencePoints)
+					{
 						sequencePoints = new List<SequencePoint>(debugInfo.SequencePoints.Count);
-						foreach (var point in debugInfo.SequencePoints) {
+						foreach (var point in debugInfo.SequencePoints)
+						{
 							sequencePoints.Add(new SequencePoint {
 								Offset = point.Offset,
 								StartLine = point.StartLine,
@@ -75,10 +85,12 @@ namespace ICSharpCode.Decompiler.PdbProvider.Cecil
 						}
 					}
 					var variables = new List<Variable>();
-					foreach (var scope in debugInfo.GetScopes()) {
+					foreach (var scope in debugInfo.GetScopes())
+					{
 						if (!scope.HasVariables)
 							continue;
-						foreach (var v in scope.Variables) {
+						foreach (var v in scope.Variables)
+						{
 							variables.Add(new Variable(v.Index, v.Name));
 						}
 					}
@@ -89,11 +101,12 @@ namespace ICSharpCode.Decompiler.PdbProvider.Cecil
 
 		public string Description { get; }
 
-        public string SourceFileName { get; }
+		public string SourceFileName { get; }
 
-        public IList<SequencePoint> GetSequencePoints(SRM.MethodDefinitionHandle handle)
+		public IList<SequencePoint> GetSequencePoints(SRM.MethodDefinitionHandle handle)
 		{
-			if (!debugInfo.TryGetValue(handle, out var info)) {
+			if (!debugInfo.TryGetValue(handle, out var info))
+			{
 				return EmptyList<SequencePoint>.Instance;
 			}
 
@@ -102,23 +115,33 @@ namespace ICSharpCode.Decompiler.PdbProvider.Cecil
 
 		public IList<Variable> GetVariables(SRM.MethodDefinitionHandle handle)
 		{
-			if (!debugInfo.TryGetValue(handle, out var info)) {
+			if (!debugInfo.TryGetValue(handle, out var info))
+			{
 				return EmptyList<Variable>.Instance;
 			}
 
 			return info.Variables;
 		}
 
-		public bool TryGetName(SRM.MethodDefinitionHandle handle, int index, out string name)
+		public bool TryGetName(SRM.MethodDefinitionHandle handle, int index, [NotNullWhen(true)] out string? name)
 		{
 			name = null;
-			if (!debugInfo.TryGetValue(handle, out var info)) {
+			if (!debugInfo.TryGetValue(handle, out var info))
+			{
 				return false;
 			}
 
 			var variable = info.Variables.FirstOrDefault(v => v.Index == index);
 			name = variable.Name;
 			return name != null;
+		}
+
+		public bool TryGetExtraTypeInfo(SRM.MethodDefinitionHandle method, int index, out PdbExtraTypeInfo extraTypeInfo)
+		{
+			// Mono.Cecil's WindowsPDB reader is unable to read tuple element names
+			// and dynamic flags custom debug information.
+			extraTypeInfo = default;
+			return false;
 		}
 	}
 }

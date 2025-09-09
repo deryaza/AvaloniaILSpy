@@ -53,7 +53,7 @@ namespace ICSharpCode.ILSpy.Options
 					Dispatcher.UIThread.InvokeAsync(
 						(Action)(
 							async () => {
-								fontSelector.Items = task.Result;
+								fontSelector.ItemsSource = task.Result;
 								if (continuation.Exception != null) {
 									foreach (var ex in continuation.Exception.InnerExceptions) {
 										await MessageBox.Show(ex.ToString());
@@ -105,14 +105,14 @@ namespace ICSharpCode.ILSpy.Options
 		static FontFamily[] FontLoader()
 		{
 			// TODO: filter SymbolFonts
-			return FontManager.Current.GetInstalledFontFamilyNames().Select(x => new FontFamily(x)).ToArray();
+			return FontManager.Current.SystemFonts.ToArray();
 		}
 
 		public static DisplaySettings LoadDisplaySettings(ILSpySettings settings)
 		{
 			XElement e = settings["DisplaySettings"];
 			var s = new DisplaySettings();
-			s.SelectedFont = new FontFamily((string)e.Attribute("Font") ?? FontManager.Current.DefaultFontFamilyName);
+			s.SelectedFont = new FontFamily((string)e.Attribute("Font") ?? FontManager.Current.DefaultFontFamily.Name);
 			s.SelectedFontSize = (double?)e.Attribute("FontSize") ?? 10.0 * 4 / 3;
 			s.ShowLineNumbers = (bool?)e.Attribute("ShowLineNumbers") ?? false;
             s.ShowDebugInfo = (bool?)e.Attribute("ShowDebugInfo") ?? false;

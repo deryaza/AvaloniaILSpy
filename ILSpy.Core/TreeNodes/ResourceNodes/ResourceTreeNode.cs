@@ -94,7 +94,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 					if (type == FileType.Xml)
 						ext = ".xml";
 					else
-						ext = Path.GetExtension(DecompilerTextView.CleanUpName(Resource.Name));
+						ext = Path.GetExtension(DecompilerTextView.CleanUpName(Resource.Name, Language.FileExtension));
 					textView.ShowNode(output, this, HighlightingManager.Instance.GetDefinitionByExtension(ext));
 					return true;
 				}
@@ -109,7 +109,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 				return false;
             SaveFileDialog dlg = new SaveFileDialog();
 			dlg.Title = "Save file";
-            dlg.InitialFileName = DecompilerTextView.CleanUpName(Resource.Name);
+            dlg.InitialFileName = DecompilerTextView.CleanUpName(Resource.Name, Language.FileExtension);
             var filename = await dlg.ShowAsync(App.Current.GetMainWindow());
             if (!string.IsNullOrEmpty(filename))
             {

@@ -13,39 +13,6 @@ namespace ICSharpCode.ILSpy.Controls
 
         public PlatformDependentWindow()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                originalInputEventHanlder = PlatformImpl.Input;
-                PlatformImpl.Input = HandleInput;
-            }
-        }
-
-        void HandleInput(RawInputEventArgs args)
-        {
-            if (args is RawKeyEventArgs rawKeyEventArgs)
-            {
-                // cmd + back = delete
-                if (rawKeyEventArgs.Modifiers.HasFlag(RawInputModifiers.Meta) && rawKeyEventArgs.Key == Key.Back)
-                {
-                    rawKeyEventArgs.Modifiers = RawInputModifiers.None;
-                    rawKeyEventArgs.Key = Key.Delete;
-                }
-
-                // swap cmd and ctrl
-                var modifier = rawKeyEventArgs.Modifiers & ~RawInputModifiers.Control & ~RawInputModifiers.Meta;
-                if (rawKeyEventArgs.Modifiers.HasFlag(RawInputModifiers.Meta))
-                {
-                    modifier |= RawInputModifiers.Control;
-                }
-                if (rawKeyEventArgs.Modifiers.HasFlag(RawInputModifiers.Control))
-                {
-                    modifier |= RawInputModifiers.Meta;
-                }
-
-                rawKeyEventArgs.Modifiers = modifier;
-            }
-
-            originalInputEventHanlder(args);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

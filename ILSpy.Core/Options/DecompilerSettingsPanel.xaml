@@ -13,8 +13,7 @@
         <DataGrid Grid.Row="1" Margin="1" 
                   HeadersVisibility="None"
                   RowBackground="{DynamicResource ThemeBackgroundBrush}"
-                  AlternatingRowBackground="{DynamicResource ThemeBackgroundBrush}"
-                  Items="{Binding AsCollectionView}" >
+                  ItemsSource="{Binding AsCollectionView}" >
               <DataGrid.Columns>
                 <DataGridCheckBoxColumn Binding="{Binding IsEnabled}" IsReadOnly="false" Width="20" />
                 <DataGridTextColumn Binding="{Binding Description}" IsReadOnly="true" Width="*" />

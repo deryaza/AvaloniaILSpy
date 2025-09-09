@@ -72,13 +72,13 @@ namespace ICSharpCode.ILSpy
 			createButton.Click += CreateButton_Click;
 			resetButton.Click += ResetButton_Click;
 
-			TemplateApplied += (sender, e) => Application.Current.FocusManager.Focus(listView);
+			TemplateApplied += (sender, e) => listView.Focus();
 			listView.TemplateApplied += listView_Loaded;
 		}
 
 		private void listView_Loaded(object sender, EventArgs e)
 		{
-			listView.Items = manager.AssemblyLists;
+			listView.ItemsSource = manager.AssemblyLists;
 			CreateDefaultAssemblyLists();
 		}
 

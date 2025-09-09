@@ -42,7 +42,7 @@ namespace ICSharpCode.ILSpy.Controls
         public ResourceObjectTable(IEnumerable resources, ContentPresenter contentPresenter)
         {
             InitializeComponent();
-            resourceListView.Items = resources;
+            resourceListView.ItemsSource = resources;
         }
 
 		private void InitializeComponent()
@@ -67,7 +67,7 @@ namespace ICSharpCode.ILSpy.Controls
 			{
 				sb.AppendLine(item.ToString());
 			}
-			App.Current.Clipboard.SetTextAsync(sb.ToString());
+			TopLevel.GetTopLevel(this).Clipboard.SetTextAsync(sb.ToString());
 		}
 		
 		void CanExecuteCopy(object sender, CanExecuteRoutedEventArgs args)

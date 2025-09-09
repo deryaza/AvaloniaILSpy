@@ -32,6 +32,7 @@ using Avalonia;
 using Avalonia.Markup.Xaml;
 using Avalonia.Controls;
 using AvaloniaEdit.Rendering;
+using Avalonia.Threading;
 
 namespace ICSharpCode.ILSpy
 {
@@ -179,7 +180,19 @@ namespace ICSharpCode.ILSpy
 					break;
 				}
 			}
-			MessageBox.Show(exception.ToString(), "Sorry, we crashed");
+
+			if (!Dispatcher.UIThread.CheckAccess())
+			{
+				Dispatcher.UIThread.Post(() =>
+				{
+
+					MessageBox.Show(exception.ToString(), "Sorry, we crashed");
+				});
+			}
+			else
+			{
+				MessageBox.Show(exception.ToString(), "Sorry, we crashed");
+			}
 		}
 
 		//protected override void OnStartup(StartupEventArgs e)

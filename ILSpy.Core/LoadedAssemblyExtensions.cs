@@ -44,13 +44,19 @@ namespace ICSharpCode.ILSpy
 		{
 			return GetLoadedAssembly(file).GetTypeSystemOrNull();
 		}
+		
+		public static IAssemblyResolver GetAssemblyResolver(this MetadataFile file)
+		{
+			return GetLoadedAssembly(file).GetAssemblyResolver();
+		}
 
-		static LoadedAssembly GetLoadedAssembly(PEFile file)
+		public static LoadedAssembly GetLoadedAssembly(this MetadataFile file)
 		{
 			if (file == null)
 				throw new ArgumentNullException(nameof(file));
 			LoadedAssembly loadedAssembly;
-			lock (LoadedAssembly.loadedAssemblies) {
+			lock (LoadedAssembly.loadedAssemblies)
+			{
 				if (!LoadedAssembly.loadedAssemblies.TryGetValue(file, out loadedAssembly))
 					throw new ArgumentException("The specified file is not associated with a LoadedAssembly!");
 			}

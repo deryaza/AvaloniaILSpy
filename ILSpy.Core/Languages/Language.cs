@@ -421,21 +421,27 @@ namespace ICSharpCode.ILSpy
 
 		protected string GetDisplayName(IEntity entity, bool includeDeclaringTypeName, bool includeNamespace, bool includeNamespaceOfDeclaringTypeName)
 		{
-            string entityName;
-            if (entity is ITypeDefinition t && !t.MetadataToken.IsNil) {
-                MetadataReader metadata = t.ParentModule.PEFile.Metadata;
-                var typeDef = metadata.GetTypeDefinition((TypeDefinitionHandle)t.MetadataToken);
-                entityName = EscapeName(metadata.GetString(typeDef.Name));
-            } else {
-                entityName = EscapeName(entity.Name);
-            }
-            if (includeNamespace || includeDeclaringTypeName) {
-                if (entity.DeclaringTypeDefinition != null)
-                    return TypeToString(entity.DeclaringTypeDefinition, includeNamespaceOfDeclaringTypeName) + "." + entityName;
-                return EscapeName(entity.Namespace) + "." + entityName;
-            } else {
-                return entityName;
-            }
+			string entityName;
+			if (entity is ITypeDefinition t && !t.MetadataToken.IsNil)
+			{
+				MetadataReader metadata = t.ParentModule.MetadataFile.Metadata;
+				var typeDef = metadata.GetTypeDefinition((TypeDefinitionHandle)t.MetadataToken);
+				entityName = EscapeName(metadata.GetString(typeDef.Name));
+			}
+			else
+			{
+				entityName = EscapeName(entity.Name);
+			}
+			if (includeNamespace || includeDeclaringTypeName)
+			{
+				if (entity.DeclaringTypeDefinition != null)
+					return TypeToString(entity.DeclaringTypeDefinition, includeNamespaceOfDeclaringTypeName) + "." + entityName;
+				return EscapeName(entity.Namespace) + "." + entityName;
+			}
+			else
+			{
+				return entityName;
+			}
 		}
 
 		/// <summary>
@@ -496,18 +502,16 @@ namespace ICSharpCode.ILSpy
 			}
 		}
 
-		public virtual CodeMappingInfo GetCodeMappingInfo(PEFile module, SRM.EntityHandle member)
+		public virtual CodeMappingInfo GetCodeMappingInfo(MetadataFile module, EntityHandle member)
 		{
-			var parts = new Dictionary<SRM.MethodDefinitionHandle, SRM.MethodDefinitionHandle[]>();
-			var locations = new Dictionary<SRM.EntityHandle, SRM.MethodDefinitionHandle>();
+			var declaringType = (TypeDefinitionHandle)member.GetDeclaringType(module.Metadata);
 
-			var declaringType = member.GetDeclaringType(module.Metadata);
-
-			if (declaringType.IsNil && member.Kind == SRM.HandleKind.TypeDefinition) {
-				declaringType = (SRM.TypeDefinitionHandle)member;
+			if (declaringType.IsNil && member.Kind == HandleKind.TypeDefinition)
+			{
+				declaringType = (TypeDefinitionHandle)member;
 			}
 
-			return new CodeMappingInfo(module, (TypeDefinitionHandle)declaringType);
+			return new CodeMappingInfo(module, declaringType);
 		}
 
 		public static string GetPlatformDisplayName(PEFile module)

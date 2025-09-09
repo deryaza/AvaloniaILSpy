@@ -25,7 +25,7 @@ namespace ICSharpCode.TreeView
 		static SharpTreeView()
 		{
 			(SelectionModeProperty as StyledProperty<SelectionMode>)?.OverrideDefaultValue<SharpTreeView>(SelectionMode.Multiple);
-			//ItemsPanelProperty.OverrideDefaultValue<SharpTreeView>(new FuncTemplate<IPanel>(() => new VirtualizingStackPanel()));
+			ItemsPanelProperty.OverrideDefaultValue<SharpTreeView>(new FuncTemplate<Panel>(() => new StackPanel()));
 
 			//AlternationCountProperty.OverrideMetadata(typeof(SharpTreeView),
 			//                                          new FrameworkPropertyMetadata(2));
@@ -108,14 +108,20 @@ namespace ICSharpCode.TreeView
 		public static readonly StyledProperty<bool> ShowAlternationProperty =
 			AvaloniaProperty.Register<SharpTreeView, bool>("ShowAlternation", defaultValue: false, inherits: true);
 
-		Type IStyleable.StyleKey => typeof(ListBox);
+        protected override Type StyleKeyOverride => typeof(ListBox);
+
+        protected override Control CreateContainerForItemOverride(object item, int index, object recycleKey)
+        {
+			return new SharpTreeViewItem() { ParentTreeView = this };
+        }
 		
-		protected override void OnPropertyChanged<T>(AvaloniaPropertyChangedEventArgs<T> e)
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs e)
 		{
 			base.OnPropertyChanged(e);
 			if (e.Property == RootProperty ||
 				e.Property == ShowRootProperty ||
-				e.Property == ShowRootExpanderProperty) {
+				e.Property == ShowRootExpanderProperty)
+			{
 				Reload();
 			}
 		}
@@ -155,7 +161,7 @@ namespace ICSharpCode.TreeView
 				}
 				flattener = new TreeFlattener(Root, ShowRoot);
 				flattener.CollectionChanged += flattener_CollectionChanged;
-				this.Items = flattener;
+				this.ItemsSource = flattener;
 			}
 		}
 
@@ -191,52 +197,6 @@ namespace ICSharpCode.TreeView
 			}
 		}
 
-		protected override IItemContainerGenerator CreateItemContainerGenerator()
-		{
-			return new ItemContainerGenerator<SharpTreeViewItem>(
-					this,
-					SharpTreeViewItem.ContentProperty,
-					SharpTreeViewItem.ContentTemplateProperty);
-		}
-
-		protected override void OnContainersMaterialized(ItemContainerEventArgs e)
-		{
-			base.OnContainersMaterialized(e);
-			foreach (var item in e.Containers) {
-				var container = item.ContainerControl as SharpTreeViewItem;
-				container.ParentTreeView = this;
-				// Make sure that the line renderer takes into account the new bound data
-				if (container.NodeView != null) {
-					container.NodeView.LinesRenderer.InvalidateVisual();
-				}
-			}
-		}
-
-		protected override void OnContainersRecycled(ItemContainerEventArgs e)
-		{
-			base.OnContainersRecycled(e);
-
-			foreach (var item in e.Containers)
-			{
-				var container = item.ContainerControl as SharpTreeViewItem;
-				container.ParentTreeView = this;
-				// Make sure that the line renderer takes into account the new bound data
-				if (container.NodeView != null)
-				{
-					container.NodeView.LinesRenderer.InvalidateVisual();
-				}
-			}
-		}
-
-		internal IControl ContainerFromItem(object item)
-		{
-			int index = IndexOf(Items, item);
-			if (index != -1) {
-				return ItemContainerGenerator.ContainerFromIndex(index);
-			}
-			return null;
-		}
-		
 		bool doNotScrollOnExpanding;
 		
 		/// <summary>
@@ -274,7 +234,7 @@ namespace ICSharpCode.TreeView
 			SharpTreeViewItem container = e.Source as SharpTreeViewItem;
 			switch (e.Key) {
 				case Key.Left:
-					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1) {
+					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1) {
 						if (container.Node.IsExpanded) {
 							container.Node.IsExpanded = false;
 						} else if (container.Node.Parent != null) {
@@ -285,7 +245,7 @@ namespace ICSharpCode.TreeView
 					break;
 				case Key.Right:
 					// TODO: focus on first child
-					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1) {
+					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1) {
 						if (!container.Node.IsExpanded && container.Node.ShowExpander) {
 							container.Node.IsExpanded = true;
 						} else if (container.Node.Children.Count > 0) {
@@ -303,19 +263,19 @@ namespace ICSharpCode.TreeView
 					}
 					break;
 				case Key.Add:
-					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1) {
+					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1) {
 						container.Node.IsExpanded = true;
 						e.Handled = true;
 					}
 					break;
 				case Key.Subtract:
-					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1) {
+					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1) {
 						container.Node.IsExpanded = false;
 						e.Handled = true;
 					}
 					break;
 				case Key.Multiply:
-					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1) {
+					if (container != null && ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1) {
 						container.Node.IsExpanded = true;
 						ExpandRecursively(container.Node);
 						e.Handled = true;
@@ -348,7 +308,7 @@ namespace ICSharpCode.TreeView
 
 		protected override void OnTextInput(TextInputEventArgs e)
 		{
-			if (!string.IsNullOrEmpty(e.Text) && IsTextSearchEnabled && (e.Source == this || ItemContainerGenerator.IndexFromContainer(e.Source as IControl) != -1)) {
+			if (!string.IsNullOrEmpty(e.Text) && IsTextSearchEnabled && (e.Source == this || ItemContainerGenerator.IndexFromContainer(e.Source as Control) != -1)) {
 				var instance = SharpTreeViewTextSearch.GetInstance(this);
 				if (instance != null) {
 					instance.Search(e.Text);

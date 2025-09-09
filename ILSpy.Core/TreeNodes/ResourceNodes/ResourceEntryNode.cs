@@ -84,7 +84,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 		{
 			SaveFileDialog dlg = new SaveFileDialog();
 			dlg.Title = "Save file";
-			dlg.InitialFileName = Path.GetFileName(DecompilerTextView.CleanUpName(key));
+			dlg.InitialFileName = Path.GetFileName(DecompilerTextView.CleanUpName(key, Language.FileExtension));
 			var filename = await dlg.ShowAsync(App.Current.GetMainWindow());
 			if (!string.IsNullOrEmpty(filename)) {
 				data.Position = 0;

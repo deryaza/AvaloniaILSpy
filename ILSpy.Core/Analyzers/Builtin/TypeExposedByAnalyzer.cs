@@ -16,21 +16,21 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
+using System.Composition;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ICSharpCode.Decompiler.TypeSystem;
 
-namespace ICSharpCode.ILSpy.Analyzers.Builtin
+using ICSharpCode.Decompiler.TypeSystem;
+using ICSharpCode.ILSpy.Analyzers;
+using ICSharpCode.ILSpy.Analyzers.Builtin;
+
+namespace ICSharpCode.ILSpyX.Analyzers.Builtin
 {
 	/// <summary>
 	/// Finds all entities that expose a type.
 	/// </summary>
 	[ExportAnalyzer(Header = "Exposed By", Order = 40)]
+	[Shared]
 	class TypeExposedByAnalyzer : IAnalyzer
 	{
 		public bool Show(ISymbol entity) => entity is ITypeDefinition;
@@ -39,7 +39,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 		{
 			Debug.Assert(analyzedSymbol is ITypeDefinition);
 			var scope = context.GetScopeOf((ITypeDefinition)analyzedSymbol);
-			foreach (var type in scope.GetTypesInScope(context.CancellationToken)) {
+			foreach (var type in scope.GetTypesInScope(context.CancellationToken))
+			{
 				foreach (var result in ScanType((ITypeDefinition)analyzedSymbol, type, context))
 					yield return result;
 			}
@@ -49,7 +50,7 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 		{
 			if (analyzedType.Kind == TypeKind.Enum
 				&& type.MetadataToken == analyzedType.MetadataToken
-				&& type.ParentModule.PEFile == analyzedType.ParentModule.PEFile)
+				&& type.ParentModule?.MetadataFile == analyzedType.ParentModule?.MetadataFile)
 				yield break;
 
 			if (!context.Language.ShowMember(type))
@@ -57,22 +58,26 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 
 			var visitor = new TypeDefinitionUsedVisitor(analyzedType, true);
 
-			foreach (IField field in type.Fields) {
+			foreach (IField field in type.Fields)
+			{
 				if (TypeIsExposedBy(visitor, field))
 					yield return field;
 			}
 
-			foreach (IProperty property in type.Properties) {
+			foreach (IProperty property in type.Properties)
+			{
 				if (TypeIsExposedBy(visitor, property))
 					yield return property;
 			}
 
-			foreach (IEvent @event in type.Events) {
+			foreach (IEvent @event in type.Events)
+			{
 				if (TypeIsExposedBy(visitor, @event))
 					yield return @event;
 			}
 
-			foreach (IMethod method in type.Methods) {
+			foreach (IMethod method in type.Methods)
+			{
 				if (TypeIsExposedBy(visitor, method))
 					yield return method;
 			}
@@ -91,7 +96,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 
 		bool TypeIsExposedBy(TypeDefinitionUsedVisitor visitor, IProperty property)
 		{
-			if (property.Accessibility == Accessibility.Private) {
+			if (property.Accessibility == Accessibility.Private)
+			{
 				if (!property.IsExplicitInterfaceImplementation)
 					return false;
 			}
@@ -99,7 +105,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 			visitor.Found = false;
 			property.ReturnType.AcceptVisitor(visitor);
 
-			foreach (var p in property.Parameters) {
+			foreach (var p in property.Parameters)
+			{
 				p.Type.AcceptVisitor(visitor);
 			}
 
@@ -108,7 +115,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 
 		bool TypeIsExposedBy(TypeDefinitionUsedVisitor visitor, IEvent @event)
 		{
-			if (@event.Accessibility == Accessibility.Private) {
+			if (@event.Accessibility == Accessibility.Private)
+			{
 				if (!@event.IsExplicitInterfaceImplementation)
 					return false;
 			}
@@ -121,7 +129,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 
 		bool TypeIsExposedBy(TypeDefinitionUsedVisitor visitor, IMethod method)
 		{
-			if (method.Accessibility == Accessibility.Private) {
+			if (method.Accessibility == Accessibility.Private)
+			{
 				if (!method.IsExplicitInterfaceImplementation)
 					return false;
 			}
@@ -129,7 +138,8 @@ namespace ICSharpCode.ILSpy.Analyzers.Builtin
 			visitor.Found = false;
 			method.ReturnType.AcceptVisitor(visitor);
 
-			foreach (var p in method.Parameters) {
+			foreach (var p in method.Parameters)
+			{
 				p.Type.AcceptVisitor(visitor);
 			}
 

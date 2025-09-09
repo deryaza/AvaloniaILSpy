@@ -41,13 +41,12 @@
         <DataGrid Name="listBox"
                   Grid.Row="2" BorderThickness="0,1,0,0" 
                   RowBackground="{DynamicResource ThemeBackgroundBrush}"
-                  AlternatingRowBackground="{DynamicResource ThemeBackgroundBrush}"
                   SelectionMode="Single" 
                   CanUserReorderColumns="False"
                   CanUserSortColumns="True"
                   KeyDown="ListBox_KeyDown"
                   DoubleTapped="ListBox_MouseDoubleClick"
-                  Items="{Binding }" >
+                  ItemsSource="{Binding }" >
             
             <!--TODO:TextTrimming-->
               <DataGrid.Columns>

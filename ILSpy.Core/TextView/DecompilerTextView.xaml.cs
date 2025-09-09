@@ -101,11 +101,11 @@ namespace ICSharpCode.ILSpy.TextView
             textEditor.TextArea.AddHandler(PointerReleasedEvent, TextAreaMouseUp, RoutingStrategies.Tunnel);
             textEditor.TextArea.Caret.PositionChanged += HighlightBrackets;
             textEditor.Bind(TextEditor.FontFamilyProperty, new Binding { Source = DisplaySettingsPanel.CurrentDisplaySettings, Path = "SelectedFont" });
-            textEditor.Bind(TextEditor.FontSizeProperty, new Binding { Source = DisplaySettingsPanel.CurrentDisplaySettings, Path = "SelectedFontSize" });
-            textEditor.Bind(TextEditor.WordWrapProperty, new Binding { Source = DisplaySettingsPanel.CurrentDisplaySettings, Path = "EnableWordWrap" });
+			textEditor.Bind(TextEditor.FontSizeProperty, new Binding { Source = DisplaySettingsPanel.CurrentDisplaySettings, Path = "SelectedFontSize" });
+			textEditor.Bind(TextEditor.WordWrapProperty, new Binding { Source = DisplaySettingsPanel.CurrentDisplaySettings, Path = "EnableWordWrap" });
 
-            // disable Tab editing command (useless for read-only editor); allow using tab for focus navigation instead
-            RemoveEditCommand(EditingCommands.TabForward);
+			// disable Tab editing command (useless for read-only editor); allow using tab for focus navigation instead
+			RemoveEditCommand(EditingCommands.TabForward);
 			RemoveEditCommand(EditingCommands.TabBackward);
 			
 			textMarkerService = new TextMarkerService(textEditor.TextArea.TextView);
@@ -157,11 +157,7 @@ namespace ICSharpCode.ILSpy.TextView
 		
 		void ShowLineMargin()
 		{
-			foreach (var margin in this.textEditor.TextArea.LeftMargins) {
-				if (margin is LineNumberMargin || margin is Line) {
-                    margin.IsVisible = DisplaySettingsPanel.CurrentDisplaySettings.ShowLineNumbers;
-				}
-			}
+			textEditor.ShowLineNumbers = true;
 		}
 		
 		#endregion
@@ -228,9 +224,9 @@ namespace ICSharpCode.ILSpy.TextView
 			XmlDocRenderer renderer = new XmlDocRenderer();
 			renderer.AppendText(MainWindow.Instance.CurrentLanguage.GetTooltip(resolved));
 			try {
-				if (resolved.ParentModule == null || resolved.ParentModule.PEFile == null)
+				if (resolved.ParentModule == null || resolved.ParentModule.MetadataFile == null)
 					return null;
-				var docProvider = XmlDocLoader.LoadDocumentation(resolved.ParentModule.PEFile);
+				var docProvider = XmlDocLoader.LoadDocumentation(resolved.ParentModule.MetadataFile);
 				if (docProvider != null) {
 					string documentation = docProvider.GetDocumentation(resolved.GetIdString());
 					if (documentation != null) {
@@ -694,7 +690,7 @@ namespace ICSharpCode.ILSpy.TextView
                 new FileDialogFilter() { Name = language.Name, Extensions = { language.FileExtension } },
                 new FileDialogFilter(){ Name = Properties.Resources.AllFiles, Extensions = { "*" } }
             };
-            dlg.InitialFileName = CleanUpName(treeNodes.First().ToString()) + language.FileExtension;
+            dlg.InitialFileName = CleanUpName(treeNodes.First().ToString(), language.FileExtension);
             var fileName = await dlg.ShowAsync(App.Current.GetMainWindow());
             if (fileName != null)
             {
@@ -773,9 +769,9 @@ namespace ICSharpCode.ILSpy.TextView
 		/// <summary>
 		/// Cleans up a node name for use as a file name.
 		/// </summary>
-		internal static string CleanUpName(string text)
+		internal static string CleanUpName(string text, string extension)
 		{
-			return WholeProjectDecompiler.CleanUpFileName(text);
+			return WholeProjectDecompiler.CleanUpFileName(text, extension);
 		}
 		#endregion
 
@@ -792,8 +788,7 @@ namespace ICSharpCode.ILSpy.TextView
 		
 		internal TextViewPosition? GetPositionFromMousePosition()
 		{
-            IPointerDevice mouse = MainWindow.Instance.PlatformImpl.MouseDevice;
-            var position = textEditor.TextArea.TextView.GetPosition(mouse.GetPosition(textEditor.TextArea.TextView) + textEditor.TextArea.TextView.ScrollOffset);
+            var position = textEditor.TextArea.TextView.GetPosition(MainWindow.Instance.LastPosition + textEditor.TextArea.TextView.ScrollOffset);
 			if (position == null)
 				return null;
 			var lineLength = textEditor.Document.GetLineByNumber(position.Value.Line).Length + 1;

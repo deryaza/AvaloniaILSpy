@@ -51,7 +51,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 			AddBaseTypes(this.Children, module, type);
 		}
 
-		internal static void AddBaseTypes(SharpTreeNodeCollection children, PEFile module, ITypeDefinition typeDefinition)
+		internal static void AddBaseTypes(SharpTreeNodeCollection children, MetadataFile module, ITypeDefinition typeDefinition)
 		{
 			var typeDef = module.Metadata.GetTypeDefinition((TypeDefinitionHandle)typeDefinition.MetadataToken);
 			var baseTypes = typeDefinition.DirectBaseTypes.ToArray();

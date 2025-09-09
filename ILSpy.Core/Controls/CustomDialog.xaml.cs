@@ -57,7 +57,7 @@ namespace ICSharpCode.ILSpy.Controls
 			this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 			this.Width = buttonLabels.Length * (100+ 10);
 
-			buttons.Items = buttonLabels;
+			buttons.ItemsSource = buttonLabels;
 
 			
 			label.Text = message;
@@ -80,7 +80,7 @@ namespace ICSharpCode.ILSpy.Controls
 		void ButtonClick(object sender, RoutedEventArgs e)
 		{
             Button button = sender as Button;
-            int index = buttons.ItemContainerGenerator.IndexFromContainer(button.Parent);
+            int index = buttons.ItemContainerGenerator.IndexFromContainer((Control)button.Parent);
             this.Close(index);
 			e.Handled = true;
 		}

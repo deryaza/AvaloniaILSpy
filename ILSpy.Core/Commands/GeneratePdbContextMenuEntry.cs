@@ -62,7 +62,7 @@ namespace ICSharpCode.ILSpy
 			}
 			SaveFileDialog dlg = new SaveFileDialog();
 			dlg.Title = "Save file";
-			dlg.InitialFileName = DecompilerTextView.CleanUpName(assembly.ShortName) + ".pdb";
+			dlg.InitialFileName = DecompilerTextView.CleanUpName(assembly.ShortName, ".pdb");
 			dlg.Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "Portable PDB", Extensions = { "pdb" } }, new FileDialogFilter { Name = "All files", Extensions = { "*" } } };
             dlg.Directory = Path.GetDirectoryName(assembly.FileName);
             string fileName = await dlg.ShowAsync(App.Current.GetMainWindow());

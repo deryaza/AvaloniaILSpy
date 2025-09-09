@@ -94,7 +94,7 @@ namespace ICSharpCode.ILSpy
 
 			object GetHierachy(object source)
 			{
-				if (source is IControl visual)
+				if (source is StyledElement visual)
 				{
 					List<string> hierachy = new List<string>();
 					hierachy.Add(visual.ToString());

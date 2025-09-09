@@ -30,13 +30,13 @@ namespace ICSharpCode.ILSpy.TreeNodes
 {
 	sealed class BaseTypesEntryNode : ILSpyTreeNode, IMemberTreeNode
 	{
-		readonly PEFile module;
+		readonly MetadataFile module;
 		readonly EntityHandle handle;
 		readonly IType type;
 		readonly bool isInterface;
 		bool showExpander;
 
-		public BaseTypesEntryNode(PEFile module, EntityHandle handle, IType type, bool isInterface)
+		public BaseTypesEntryNode(MetadataFile module, EntityHandle handle, IType type, bool isInterface)
 		{
 			if (handle.IsNil)
 				throw new ArgumentNullException(nameof(handle));
@@ -48,14 +48,14 @@ namespace ICSharpCode.ILSpy.TreeNodes
 			TryResolve(module, handle, type);
 		}
 
-		ITypeDefinition TryResolve(PEFile module, EntityHandle handle, IType type, bool mayRetry = true)
+		ITypeDefinition TryResolve(MetadataFile module, EntityHandle handle, IType type, bool mayRetry = true)
 		{
 			DecompilerTypeSystem typeSystem = new DecompilerTypeSystem(module, module.GetAssemblyResolver(),
 				TypeSystemOptions.Default | TypeSystemOptions.Uncached);
 			var t = typeSystem.MainModule.ResolveEntity(handle) as ITypeDefinition;
 			if (t != null) {
 				showExpander = t.DirectBaseTypes.Any();
-				var other = t.ParentModule.PEFile.GetTypeSystemOrNull();
+				var other = t.ParentModule.MetadataFile.GetLoadedAssembly().GetTypeSystemOrNull();
 				Debug.Assert(other != null);
 				t = other.FindType(t.FullTypeName).GetDefinition();
 			} else {
@@ -76,7 +76,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 		{
 			var t = TryResolve(module, handle, type, false);
 			if (t != null) {
-				BaseTypesTreeNode.AddBaseTypes(this.Children, t.ParentModule.PEFile, t);
+				BaseTypesTreeNode.AddBaseTypes(this.Children, t.ParentModule.MetadataFile, t);
 			}
 		}
 

@@ -301,7 +301,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 					case DirectoryNotFoundException dirNotFound:
 						HandleException(dirNotFound, "The directory was not found.");
 						return;
-					case PEFileNotSupportedException notSupported:
+					case MetadataFileNotSupportedException notSupported:
 						HandleException(notSupported, notSupported.Message);
 						return;
 					default:
@@ -318,7 +318,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 				return false;
 			SaveFileDialog dlg = new SaveFileDialog();
 			dlg.Title = "Save file";
-            dlg.InitialFileName = DecompilerTextView.CleanUpName(LoadedAssembly.ShortName);
+            dlg.InitialFileName = DecompilerTextView.CleanUpName(LoadedAssembly.ShortName, language.ProjectFileExtension);
 			dlg.Filters = new List<FileDialogFilter>() 
 			{
                 new FileDialogFilter() { Name = language.Name + " project", Extensions = { language.ProjectFileExtension.TrimStart('.') } },

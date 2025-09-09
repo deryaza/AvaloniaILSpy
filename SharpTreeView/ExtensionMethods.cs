@@ -7,12 +7,13 @@ using Avalonia.VisualTree;
 using Avalonia;
 using System.Collections;
 using System;
+using Avalonia.Controls;
 
 namespace ICSharpCode.TreeView
 {
 	static class ExtensionMethods
 	{
-		public static T FindAncestor<T>(this IVisual d) where T : class
+		public static T FindAncestor<T>(this Visual d) where T : class
 		{
 			return d.GetVisualAncestors().OfType<T>().FirstOrDefault();
 		}

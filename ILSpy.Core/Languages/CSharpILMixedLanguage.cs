@@ -55,7 +55,7 @@ namespace ICSharpCode.ILSpy
 				options.CancellationToken);
 		}
 
-		static CSharpDecompiler CreateDecompiler(PEFile module, DecompilationOptions options)
+		static CSharpDecompiler CreateDecompiler(MetadataFile module, DecompilationOptions options)
 		{
 			CSharpDecompiler decompiler = new CSharpDecompiler(module, module.GetAssemblyResolver(), options.DecompilerSettings);
 			decompiler.CancellationToken = options.CancellationToken;
@@ -84,24 +84,27 @@ namespace ICSharpCode.ILSpy
 				this.options = options;
 			}
 
-			public override void Disassemble(PEFile module, MethodDefinitionHandle handle)
+			public override void Disassemble(MetadataFile module, MethodDefinitionHandle handle)
 			{
-				try {
+				try
+				{
 					var csharpOutput = new StringWriter();
 					CSharpDecompiler decompiler = CreateDecompiler(module, options);
 					var st = decompiler.Decompile(handle);
 					WriteCode(csharpOutput, options.DecompilerSettings, st, decompiler.TypeSystem);
-                    var mapping = decompiler.CreateSequencePoints(st).FirstOrDefault(kvp => (kvp.Key.MoveNextMethod ?? kvp.Key.Method).MetadataToken == handle);
-                    this.sequencePoints = mapping.Value ?? (IList<SequencePoint>)EmptyList<SequencePoint>.Instance;
+					var mapping = decompiler.CreateSequencePoints(st).FirstOrDefault(kvp => (kvp.Key.MoveNextMethod ?? kvp.Key.Method).MetadataToken == handle);
+					this.sequencePoints = mapping.Value ?? (IList<SequencePoint>)EmptyList<SequencePoint>.Instance;
 					this.codeLines = csharpOutput.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
 					base.Disassemble(module, handle);
-				} finally {
+				}
+				finally
+				{
 					this.sequencePoints = null;
 					this.codeLines = null;
 				}
 			}
 
-			protected override void WriteInstruction(ITextOutput output, MetadataReader metadata, MethodDefinitionHandle methodDefinition, ref BlobReader blob, int methodRva)
+			protected override void WriteInstruction(ITextOutput output, MetadataFile metadata, MethodDefinitionHandle methodDefinition, ref BlobReader blob, int methodRva)
 			{
 				int index = sequencePoints.BinarySearch(blob.Offset, seq => seq.Offset);
 				if (index >= 0) {

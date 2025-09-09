@@ -124,11 +124,11 @@ namespace ICSharpCode.ILSpy
             }
         }
 
-        CSharpDecompiler CreateDecompiler(PEFile module, DecompilationOptions options)
+        CSharpDecompiler CreateDecompiler(MetadataFile module, DecompilationOptions options)
         {
             CSharpDecompiler decompiler = new CSharpDecompiler(module, module.GetAssemblyResolver(), options.DecompilerSettings);
             decompiler.CancellationToken = options.CancellationToken;
-            decompiler.DebugInfoProvider = module.GetDebugInfoOrNull();
+            decompiler.DebugInfoProvider = module.GetLoadedAssembly().GetDebugInfoOrNull();
             while (decompiler.AstTransforms.Count > transformCount)
                 decompiler.AstTransforms.RemoveAt(decompiler.AstTransforms.Count - 1);
             return decompiler;
@@ -148,7 +148,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileMethod(IMethod method, ITextOutput output, DecompilationOptions options)
         {
-            PEFile assembly = method.ParentModule.PEFile;
+            MetadataFile assembly = method.ParentModule.MetadataFile;
             CSharpDecompiler decompiler = CreateDecompiler(assembly, options);
             AddReferenceAssemblyWarningMessage(assembly, output);
             AddReferenceWarningMessage(assembly, output);
@@ -229,7 +229,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileProperty(IProperty property, ITextOutput output, DecompilationOptions options)
         {
-            PEFile assembly = property.ParentModule.PEFile;
+            MetadataFile assembly = property.ParentModule.MetadataFile;
             CSharpDecompiler decompiler = CreateDecompiler(assembly, options);
             AddReferenceAssemblyWarningMessage(assembly, output);
             AddReferenceWarningMessage(assembly, output);
@@ -239,7 +239,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileField(IField field, ITextOutput output, DecompilationOptions options)
         {
-            PEFile assembly = field.ParentModule.PEFile;
+            MetadataFile assembly = field.ParentModule.MetadataFile;
             CSharpDecompiler decompiler = CreateDecompiler(assembly, options);
             AddReferenceAssemblyWarningMessage(assembly, output);
             AddReferenceWarningMessage(assembly, output);
@@ -307,7 +307,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileEvent(IEvent @event, ITextOutput output, DecompilationOptions options)
         {
-            PEFile assembly = @event.ParentModule.PEFile;
+            MetadataFile assembly = @event.ParentModule.MetadataFile;
             CSharpDecompiler decompiler = CreateDecompiler(assembly, options);
             AddReferenceAssemblyWarningMessage(assembly, output);
             AddReferenceWarningMessage(assembly, output);
@@ -317,7 +317,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileType(ITypeDefinition type, ITextOutput output, DecompilationOptions options)
         {
-            PEFile assembly = type.ParentModule.PEFile;
+            MetadataFile assembly = type.ParentModule.MetadataFile;
             CSharpDecompiler decompiler = CreateDecompiler(assembly, options);
             AddReferenceAssemblyWarningMessage(assembly, output);
             AddReferenceWarningMessage(assembly, output);
@@ -325,7 +325,7 @@ namespace ICSharpCode.ILSpy
             WriteCode(output, options.DecompilerSettings, decompiler.Decompile(type.MetadataToken), decompiler.TypeSystem);
         }
 
-        void AddReferenceWarningMessage(PEFile module, ITextOutput output)
+        void AddReferenceWarningMessage(MetadataFile module, ITextOutput output)
         {
             var loadedAssembly = MainWindow.Instance.CurrentAssemblyList.GetAssemblies().FirstOrDefault(la => la.GetPEFileOrNull() == module);
             if (loadedAssembly == null || !loadedAssembly.LoadedAssemblyReferencesInfo.HasErrors)
@@ -340,7 +340,7 @@ namespace ICSharpCode.ILSpy
             });
         }
 
-        void AddReferenceAssemblyWarningMessage(PEFile module, ITextOutput output)
+        void AddReferenceAssemblyWarningMessage(MetadataFile module, ITextOutput output)
         {
             var metadata = module.Metadata;
             if (!metadata.GetCustomAttributes(Handle.AssemblyDefinition).HasKnownAttribute(metadata, KnownAttribute.ReferenceAssembly))
@@ -349,8 +349,8 @@ namespace ICSharpCode.ILSpy
             AddWarningMessage(module, output, line1);
         }
 
-        void AddWarningMessage(PEFile module, ITextOutput output, string line1, string line2 = null,
-            string buttonText = null, IBitmap buttonImage = null, EventHandler<Avalonia.Interactivity.RoutedEventArgs> buttonClickHandler = null)
+        void AddWarningMessage(MetadataFile module, ITextOutput output, string line1, string line2 = null,
+            string buttonText = null, Bitmap buttonImage = null, EventHandler<Avalonia.Interactivity.RoutedEventArgs> buttonClickHandler = null)
         {
             if (output is ISmartTextOutput fancyOutput)
             {
@@ -489,6 +489,7 @@ namespace ICSharpCode.ILSpy
             : base(
                 options.DecompilerSettings,
                 assembly.GetAssemblyResolver(),
+                null,
                 null,
                 assembly.GetDebugInfoOrNull()
             )
@@ -699,7 +700,7 @@ namespace ICSharpCode.ILSpy
 
         public override bool ShowMember(IEntity member)
         {
-            PEFile assembly = member.ParentModule.PEFile;
+            MetadataFile assembly = member.ParentModule.MetadataFile;
             return showAllMembers || !CSharpDecompiler.MemberIsHidden(assembly, member.MetadataToken, new DecompilationOptions().DecompilerSettings);
         }
 
@@ -709,7 +710,7 @@ namespace ICSharpCode.ILSpy
             return new CSharpAmbience() { ConversionFlags = flags }.ConvertSymbol(entity);
         }
 
-        public override CodeMappingInfo GetCodeMappingInfo(PEFile module, EntityHandle member)
+        public override CodeMappingInfo GetCodeMappingInfo(MetadataFile module, EntityHandle member)
         {
             return CSharpDecompiler.GetCodeMappingInfo(module, member);
         }

@@ -26,6 +26,7 @@ using Avalonia.Threading;
 using AvaloniaEdit.Editing;
 using Avalonia.Styling;
 using Avalonia.Controls.Shapes;
+using Avalonia.Controls.Documents;
 
 namespace ICSharpCode.ILSpy.TextView
 {
@@ -59,7 +60,7 @@ namespace ICSharpCode.ILSpy.TextView
             double size = Math.Max(min.Width, min.Height) * 0.25;
             Rect max = min.Inflate(size);
 
-            pen = new Pen(TextBlock.GetForeground(textArea.TextView).ToImmutable());
+            pen = new Pen(textArea.TextView.GetValue(TextElement.ForegroundProperty).ToImmutable());
 
             //geometry.BeginAnimation(RectangleGeometry.RectProperty, new RectAnimation(min, max, new Duration(TimeSpan.FromMilliseconds(300))) { AutoReverse = true });
             //pen.Brush.BeginAnimation(Brush.OpacityProperty, new DoubleAnimation(1, 0, new Duration(TimeSpan.FromMilliseconds(200))) { BeginTime = TimeSpan.FromMilliseconds(450) });
@@ -84,7 +85,7 @@ namespace ICSharpCode.ILSpy.TextView
                 }
             };
 
-            caretAnimation.RunAsync(this, null, default);
+            caretAnimation.RunAsync(this, default);
         }
 
         public static void DisplayCaretHighlightAnimation(TextArea textArea)

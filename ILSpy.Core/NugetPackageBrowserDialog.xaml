@@ -23,7 +23,7 @@
 				Height="Auto" />
 		</Grid.RowDefinitions>
         <TextBlock Text="{x:Static properties:Resources.SelectAssembliesOpen}" Margin="5" />
-		<ListBox Items="{Binding Package.Entries}" Grid.Row="1">
+		<ListBox ItemsSource="{Binding Package.Entries}" Grid.Row="1">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />

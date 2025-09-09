@@ -180,7 +180,7 @@ namespace ICSharpCode.ILSpy.TreeNodes
 						builder.AppendLine(node.Text.ToString());
 					}
 				}
-				App.Current.Clipboard.SetTextAsync(builder.ToString());
+				MainWindow.Instance.Clipboard.SetTextAsync(builder.ToString());
 			}
 		}
 	}

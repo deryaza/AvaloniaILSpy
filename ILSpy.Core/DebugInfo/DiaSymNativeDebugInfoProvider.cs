@@ -62,14 +62,19 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			var points = method.GetSequencePoints();
 			int i = 0;
 			var buffer = new char[1024];
-			foreach (var point in points) {
+			foreach (var point in points)
+			{
 				string url;
-				if (point.Document.GetUrl(buffer.Length, out int length, buffer) == 0) {
+				if (point.Document.GetUrl(buffer.Length, out int length, buffer) == 0)
+				{
 					url = new string(buffer, 0, length - 1);
-				} else {
+				}
+				else
+				{
 					url = "";
 				}
-				sequencePoints[i] = new Decompiler.DebugInfo.SequencePoint() {
+				sequencePoints[i] = new Decompiler.DebugInfo.SequencePoint()
+				{
 					Offset = point.Offset,
 					StartLine = point.StartLine,
 					StartColumn = point.StartColumn,
@@ -77,7 +82,7 @@ namespace ICSharpCode.ILSpy.DebugInfo
 					EndColumn = point.EndColumn,
 					DocumentUrl = url
 				};
-				
+
 				i++;
 			}
 			return sequencePoints;
@@ -89,10 +94,12 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			var scopes = new Queue<ISymUnmanagedScope>(new[] { method.GetRootScope() });
 			var variables = new List<Variable>();
 
-			while (scopes.Count > 0) {
+			while (scopes.Count > 0)
+			{
 				var scope = scopes.Dequeue();
 
-				foreach (var local in scope.GetLocals()) {
+				foreach (var local in scope.GetLocals())
+				{
 					variables.Add(new Variable(variables.Count, local.GetName()));
 				}
 
@@ -103,17 +110,91 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			return variables;
 		}
 
+		public bool TryGetExtraTypeInfo(MethodDefinitionHandle method, int index, out PdbExtraTypeInfo extraTypeInfo)
+		{
+			extraTypeInfo = default;
+
+			if (metadata == null)
+				return false;
+
+			LocalVariableHandle localVariableHandle = default;
+			foreach (var h in metadata.GetLocalScopes(method))
+			{
+				var scope = metadata.GetLocalScope(h);
+				foreach (var v in scope.GetLocalVariables())
+				{
+					var var = metadata.GetLocalVariable(v);
+					if (var.Index == index)
+					{
+						localVariableHandle = v;
+						break;
+					}
+				}
+
+				if (!localVariableHandle.IsNil)
+					break;
+			}
+
+			foreach (var h in metadata.CustomDebugInformation)
+			{
+				var cdi = metadata.GetCustomDebugInformation(h);
+				if (cdi.Parent.IsNil || cdi.Parent.Kind != HandleKind.LocalVariable)
+					continue;
+				if (localVariableHandle != (LocalVariableHandle)cdi.Parent)
+					continue;
+				if (cdi.Value.IsNil || cdi.Kind.IsNil)
+					continue;
+				var kind = metadata.GetGuid(cdi.Kind);
+				if (kind == KnownGuids.TupleElementNames && extraTypeInfo.TupleElementNames is null)
+				{
+					var reader = metadata.GetBlobReader(cdi.Value);
+					var list = new List<string>();
+					while (reader.RemainingBytes > 0)
+					{
+						// Read a UTF8 null-terminated string
+						int length = reader.IndexOf(0);
+						string s = reader.ReadUTF8(length);
+						// Skip null terminator
+						reader.ReadByte();
+						list.Add(string.IsNullOrWhiteSpace(s) ? null : s);
+					}
+
+					extraTypeInfo.TupleElementNames = list.ToArray();
+				}
+				else if (kind == KnownGuids.DynamicLocalVariables && extraTypeInfo.DynamicFlags is null)
+				{
+					var reader = metadata.GetBlobReader(cdi.Value);
+					extraTypeInfo.DynamicFlags = new bool[reader.Length * 8];
+					int j = 0;
+					while (reader.RemainingBytes > 0)
+					{
+						int b = reader.ReadByte();
+						for (int i = 1; i < 0x100; i <<= 1)
+							extraTypeInfo.DynamicFlags[j++] = (b & i) != 0;
+					}
+				}
+
+				if (extraTypeInfo.TupleElementNames != null && extraTypeInfo.DynamicFlags != null)
+					break;
+			}
+
+			return extraTypeInfo.TupleElementNames != null || extraTypeInfo.DynamicFlags != null;
+		}
+
 		public bool TryGetName(MethodDefinitionHandle handle, int index, out string name)
 		{
 			var method = reader.GetMethod(MetadataTokens.GetToken(handle));
 			var scopes = new Queue<ISymUnmanagedScope>(new[] { method.GetRootScope() });
 			name = null;
 
-			while (scopes.Count > 0) {
+			while (scopes.Count > 0)
+			{
 				var scope = scopes.Dequeue();
 
-				foreach (var local in scope.GetLocals()) {
-					if (local.GetSlot() == index) {
+				foreach (var local in scope.GetLocals())
+				{
+					if (local.GetSlot() == index)
+					{
 						name = local.GetName();
 						return true;
 					}
@@ -129,7 +210,8 @@ namespace ICSharpCode.ILSpy.DebugInfo
 		unsafe bool ISymReaderMetadataProvider.TryGetStandaloneSignature(int standaloneSignatureToken, out byte* signature, out int length)
 		{
 			var handle = (StandaloneSignatureHandle)MetadataTokens.Handle(standaloneSignatureToken);
-			if (handle.IsNil) {
+			if (handle.IsNil)
+			{
 				signature = null;
 				length = 0;
 				return false;
@@ -146,7 +228,8 @@ namespace ICSharpCode.ILSpy.DebugInfo
 		bool ISymReaderMetadataProvider.TryGetTypeDefinitionInfo(int typeDefinitionToken, out string namespaceName, out string typeName, out TypeAttributes attributes)
 		{
 			var handle = (TypeDefinitionHandle)MetadataTokens.Handle(typeDefinitionToken);
-			if (handle.IsNil) {
+			if (handle.IsNil)
+			{
 				namespaceName = null;
 				typeName = null;
 				attributes = 0;
@@ -163,7 +246,8 @@ namespace ICSharpCode.ILSpy.DebugInfo
 		bool ISymReaderMetadataProvider.TryGetTypeReferenceInfo(int typeReferenceToken, out string namespaceName, out string typeName)
 		{
 			var handle = (TypeReferenceHandle)MetadataTokens.Handle(typeReferenceToken);
-			if (handle.IsNil) {
+			if (handle.IsNil)
+			{
 				namespaceName = null;
 				typeName = null;
 				return false;

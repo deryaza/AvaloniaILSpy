@@ -102,7 +102,7 @@ namespace ICSharpCode.ILSpy
 				await Task.Run(() => Parallel.ForEach(assemblies, n => WriteProject(n, language, solutionDirectory, ct)))
 					.ConfigureAwait(false);
 
-				await Task.Run(() => SolutionCreator.WriteSolutionFile(solutionFilePath, projects))
+				await Task.Run(() => SolutionCreator.WriteSolutionFile(solutionFilePath, projects.ToList()))
 					.ConfigureAwait(false);
 			} catch (AggregateException ae) {
 				if (ae.Flatten().InnerExceptions.All(e => e is OperationCanceledException)) {

@@ -45,17 +45,22 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			var debugInfo = metadata.GetMethodDebugInformation(method);
 			var sequencePoints = new List<Decompiler.DebugInfo.SequencePoint>();
 
-			foreach (var point in debugInfo.GetSequencePoints()) {
+			foreach (var point in debugInfo.GetSequencePoints())
+			{
 				string documentFileName;
 
-				if (!point.Document.IsNil) {
+				if (!point.Document.IsNil)
+				{
 					var document = metadata.GetDocument(point.Document);
 					documentFileName = metadata.GetString(document.Name);
-				} else {
+				}
+				else
+				{
 					documentFileName = "";
 				}
 
-				sequencePoints.Add(new Decompiler.DebugInfo.SequencePoint() {
+				sequencePoints.Add(new Decompiler.DebugInfo.SequencePoint()
+				{
 					Offset = point.Offset,
 					StartLine = point.StartLine,
 					StartColumn = point.StartColumn,
@@ -73,9 +78,11 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			var metadata = provider.GetMetadataReader();
 			var variables = new List<Variable>();
 
-			foreach (var h in metadata.GetLocalScopes(method)) {
+			foreach (var h in metadata.GetLocalScopes(method))
+			{
 				var scope = metadata.GetLocalScope(h);
-				foreach (var v in scope.GetLocalVariables()) {
+				foreach (var v in scope.GetLocalVariables())
+				{
 					var var = metadata.GetLocalVariable(v);
 					variables.Add(new Variable(var.Index, metadata.GetString(var.Name)));
 				}
@@ -84,16 +91,91 @@ namespace ICSharpCode.ILSpy.DebugInfo
 			return variables;
 		}
 
+		public bool TryGetExtraTypeInfo(MethodDefinitionHandle method, int index, out PdbExtraTypeInfo extraTypeInfo)
+		{
+			var metadata = provider.GetMetadataReader();
+			extraTypeInfo = default;
+
+			if (metadata == null)
+				return false;
+
+			LocalVariableHandle localVariableHandle = default;
+			foreach (var h in metadata.GetLocalScopes(method))
+			{
+				var scope = metadata.GetLocalScope(h);
+				foreach (var v in scope.GetLocalVariables())
+				{
+					var var = metadata.GetLocalVariable(v);
+					if (var.Index == index)
+					{
+						localVariableHandle = v;
+						break;
+					}
+				}
+
+				if (!localVariableHandle.IsNil)
+					break;
+			}
+
+			foreach (var h in metadata.CustomDebugInformation)
+			{
+				var cdi = metadata.GetCustomDebugInformation(h);
+				if (cdi.Parent.IsNil || cdi.Parent.Kind != HandleKind.LocalVariable)
+					continue;
+				if (localVariableHandle != (LocalVariableHandle)cdi.Parent)
+					continue;
+				if (cdi.Value.IsNil || cdi.Kind.IsNil)
+					continue;
+				var kind = metadata.GetGuid(cdi.Kind);
+				if (kind == KnownGuids.TupleElementNames && extraTypeInfo.TupleElementNames is null)
+				{
+					var reader = metadata.GetBlobReader(cdi.Value);
+					var list = new List<string>();
+					while (reader.RemainingBytes > 0)
+					{
+						// Read a UTF8 null-terminated string
+						int length = reader.IndexOf(0);
+						string s = reader.ReadUTF8(length);
+						// Skip null terminator
+						reader.ReadByte();
+						list.Add(string.IsNullOrWhiteSpace(s) ? null : s);
+					}
+
+					extraTypeInfo.TupleElementNames = list.ToArray();
+				}
+				else if (kind == KnownGuids.DynamicLocalVariables && extraTypeInfo.DynamicFlags is null)
+				{
+					var reader = metadata.GetBlobReader(cdi.Value);
+					extraTypeInfo.DynamicFlags = new bool[reader.Length * 8];
+					int j = 0;
+					while (reader.RemainingBytes > 0)
+					{
+						int b = reader.ReadByte();
+						for (int i = 1; i < 0x100; i <<= 1)
+							extraTypeInfo.DynamicFlags[j++] = (b & i) != 0;
+					}
+				}
+
+				if (extraTypeInfo.TupleElementNames != null && extraTypeInfo.DynamicFlags != null)
+					break;
+			}
+
+			return extraTypeInfo.TupleElementNames != null || extraTypeInfo.DynamicFlags != null;
+		}
+
 		public bool TryGetName(MethodDefinitionHandle method, int index, out string name)
 		{
 			var metadata = provider.GetMetadataReader();
 			name = null;
 
-			foreach (var h in metadata.GetLocalScopes(method)) {
+			foreach (var h in metadata.GetLocalScopes(method))
+			{
 				var scope = metadata.GetLocalScope(h);
-				foreach (var v in scope.GetLocalVariables()) {
+				foreach (var v in scope.GetLocalVariables())
+				{
 					var var = metadata.GetLocalVariable(v);
-					if (var.Index == index) {
+					if (var.Index == index)
+					{
 						name = metadata.GetString(var.Name);
 						return true;
 					}

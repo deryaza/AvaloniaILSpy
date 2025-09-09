@@ -17,6 +17,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
@@ -64,13 +65,16 @@ namespace ICSharpCode.ILSpy.Analyzers
 
 		public MethodBodyBlock GetMethodBody(IMethod method)
 		{
-			if (!method.HasBody || method.MetadataToken.IsNil)
+			if (!method.HasBody || method.MetadataToken.IsNil || method.ParentModule?.MetadataFile == null)
 				return null;
-			var module = method.ParentModule.PEFile;
+			var module = method.ParentModule.MetadataFile;
 			var md = module.Metadata.GetMethodDefinition((MethodDefinitionHandle)method.MetadataToken);
-			try {
-				return module.Reader.GetMethodBody(md.RelativeVirtualAddress);
-			} catch (BadImageFormatException) {
+			try
+			{
+				return module.GetMethodBody(md.RelativeVirtualAddress);
+			}
+			catch (BadImageFormatException)
+			{
 				return null;
 			}
 		}
@@ -78,6 +82,13 @@ namespace ICSharpCode.ILSpy.Analyzers
 		public AnalyzerScope GetScopeOf(IEntity entity)
 		{
 			return new AnalyzerScope(AssemblyList, entity);
+		}
+
+		readonly ConcurrentDictionary<MetadataFile, DecompilerTypeSystem> typeSystemCache = new ConcurrentDictionary<MetadataFile, DecompilerTypeSystem>();
+
+		public DecompilerTypeSystem GetOrCreateTypeSystem(MetadataFile module)
+		{
+			return typeSystemCache.GetOrAdd(module, m => new DecompilerTypeSystem(m, m.GetAssemblyResolver()));
 		}
 	}
 

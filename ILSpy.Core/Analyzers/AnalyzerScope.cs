@@ -62,10 +62,10 @@ namespace ICSharpCode.ILSpy.Analyzers
 			IsLocal = memberAccessibility == Accessibility.Private || typeAccessibility == Accessibility.Private;
 		}
 
-		public IEnumerable<PEFile> GetModulesInScope(CancellationToken ct)
+		public IEnumerable<MetadataFile> GetModulesInScope(CancellationToken ct)
 		{
 			if (IsLocal)
-				return new[] { TypeScope.ParentModule.PEFile };
+				return new[] { TypeScope.ParentModule.MetadataFile };
 
 			if (memberAccessibility == Accessibility.Internal ||
 				memberAccessibility == Accessibility.ProtectedOrInternal ||
@@ -73,7 +73,7 @@ namespace ICSharpCode.ILSpy.Analyzers
 				typeAccessibility == Accessibility.ProtectedAndInternal)
 				return GetModuleAndAnyFriends(TypeScope, ct);
 
-			return GetReferencingModules(TypeScope.ParentModule.PEFile, ct);
+			return GetReferencingModules(TypeScope.ParentModule.MetadataFile, ct);
 		}
 
 		public IEnumerable<PEFile> GetAllModules()
@@ -88,7 +88,7 @@ namespace ICSharpCode.ILSpy.Analyzers
 		public IEnumerable<ITypeDefinition> GetTypesInScope(CancellationToken ct)
 		{
 			if (IsLocal) {
-				var typeSystem = new DecompilerTypeSystem(TypeScope.ParentModule.PEFile, TypeScope.ParentModule.PEFile.GetAssemblyResolver());
+				var typeSystem = new DecompilerTypeSystem(TypeScope.ParentModule.MetadataFile, TypeScope.ParentModule.MetadataFile.GetAssemblyResolver());
                 ITypeDefinition scope = typeScope;
                 if (memberAccessibility != Accessibility.Private && typeScope.DeclaringTypeDefinition != null)
                 {
@@ -128,8 +128,13 @@ namespace ICSharpCode.ILSpy.Analyzers
 			return typeAccessibility;
 		}
 
+		public DecompilerTypeSystem ConstructTypeSystem(MetadataFile module)
+		{
+			return new DecompilerTypeSystem(module, module.GetAssemblyResolver());
+		}
+
 		#region Find modules
-		IEnumerable<PEFile> GetReferencingModules(PEFile self, CancellationToken ct)
+		IEnumerable<MetadataFile> GetReferencingModules(MetadataFile self, CancellationToken ct)
 		{
 			yield return self;
 
@@ -157,9 +162,9 @@ namespace ICSharpCode.ILSpy.Analyzers
 			}
 		}
 
-		IEnumerable<PEFile> GetModuleAndAnyFriends(ITypeDefinition typeScope, CancellationToken ct)
+		IEnumerable<MetadataFile> GetModuleAndAnyFriends(ITypeDefinition typeScope, CancellationToken ct)
 		{
-			var self = typeScope.ParentModule.PEFile;
+			var self = typeScope.ParentModule.MetadataFile;
 
 			yield return self;
 

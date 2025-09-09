@@ -43,7 +43,7 @@ namespace ICSharpCode.ILSpy
 	[DebuggerDisplay("[LoadedAssembly {shortName}]")]
 	public sealed class LoadedAssembly
 	{
-		internal static readonly ConditionalWeakTable<PEFile, LoadedAssembly> loadedAssemblies = new ConditionalWeakTable<PEFile, LoadedAssembly>();
+		internal static readonly ConditionalWeakTable<MetadataFile, LoadedAssembly> loadedAssemblies = new ConditionalWeakTable<MetadataFile, LoadedAssembly>();
 
 		readonly Task<PEFile> assemblyTask;
 		readonly AssemblyList assemblyList;
@@ -290,22 +290,22 @@ namespace ICSharpCode.ILSpy
 				return UniversalAssemblyResolver.GetAssemblyInGac(reference) != null;
 			}
 
-			public PEFile Resolve(Decompiler.Metadata.IAssemblyReference reference)
+			public MetadataFile Resolve(Decompiler.Metadata.IAssemblyReference reference)
 			{
 				return parent.LookupReferencedAssembly(reference)?.GetPEFileOrNull();
 			}
 
-            public Task<PEFile> ResolveAsync(IAssemblyReference reference)
+            public Task<MetadataFile> ResolveAsync(IAssemblyReference reference)
             {
 				return Task.Run(() => Resolve(reference));
             }
 
-            public PEFile ResolveModule(PEFile mainModule, string moduleName)
+            public MetadataFile ResolveModule(MetadataFile mainModule, string moduleName)
 			{
 				return parent.LookupReferencedModule(mainModule, moduleName)?.GetPEFileOrNull();
 			}
 
-            public Task<PEFile> ResolveModuleAsync(PEFile mainModule, string moduleName)
+            public Task<MetadataFile> ResolveModuleAsync(MetadataFile mainModule, string moduleName)
 			{
 				return Task.Run(() => ResolveModule(mainModule, moduleName));
 			}
@@ -337,7 +337,7 @@ namespace ICSharpCode.ILSpy
 			}
 		}
 
-		public LoadedAssembly LookupReferencedModule(PEFile mainModule, string moduleName)
+		public LoadedAssembly LookupReferencedModule(MetadataFile mainModule, string moduleName)
 		{
 			if (mainModule == null)
 				throw new ArgumentNullException(nameof(mainModule));
@@ -409,7 +409,7 @@ namespace ICSharpCode.ILSpy
 			return asm;
 		}
 
-		LoadedAssembly LookupReferencedModuleInternal(PEFile mainModule, string moduleName)
+		LoadedAssembly LookupReferencedModuleInternal(MetadataFile mainModule, string moduleName)
 		{
 			string file;
 			LoadedAssembly asm;

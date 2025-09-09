@@ -111,7 +111,7 @@ namespace ICSharpCode.ILSpy.AvaloniaEdit
 		/// </summary>
 		internal void Redraw(ISegment segment)
 		{
-			textView.Redraw(segment, DispatcherPriority.Normal);
+			textView.Redraw(segment);
 			if (RedrawRequested != null)
 				RedrawRequested(this, EventArgs.Empty);
 		}
@@ -137,7 +137,7 @@ namespace ICSharpCode.ILSpy.AvaloniaEdit
 					Math.Min(marker.EndOffset, lineEnd),
 					element => {
 						if (foregroundBrush != null) {
-							element.TextRunProperties.ForegroundBrush = foregroundBrush;
+							element.TextRunProperties.SetForegroundBrush(foregroundBrush);
 						}
 						// TODO: change font style
 						//string tf = element.TextRunProperties.Typeface;
